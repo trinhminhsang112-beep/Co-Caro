@@ -1,0 +1,165 @@
+/* ==========================================================================
+   CỜ CARO - RESPONSIVE & MOBILE ADAPTATIONS
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  :root {
+    --board-dimension: min(94vw, 480px);
+  }
+
+  .header {
+    padding: 12px 14px 6px;
+  }
+
+  .brand h1 {
+    font-size: 1.45rem;
+  }
+
+  .brand-subtitle {
+    font-size: 0.72rem;
+  }
+
+  .icon-btn span.btn-text {
+    display: none;
+  }
+
+  .icon-btn {
+    padding: 8px 10px;
+  }
+
+  .mode-bar {
+    width: 95%;
+    max-width: 440px;
+    justify-content: center;
+  }
+
+  .mode-tab {
+    padding: 6px 10px;
+    font-size: 0.78rem;
+  }
+
+  .status-container {
+    padding: 0 6px;
+    gap: 8px;
+  }
+
+  .player-card {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .player-badge {
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
+  }
+
+  .player-name {
+    font-size: 0.8rem;
+  }
+
+  .player-role {
+    font-size: 0.68rem;
+  }
+
+  .game-meta {
+    min-width: 48px;
+  }
+
+  .move-count-badge {
+    padding: 2px 6px;
+    font-size: 0.75rem;
+  }
+
+  .board-wrapper {
+    padding: 4px;
+    border-radius: var(--radius-sm);
+  }
+
+  .controls-bar {
+    gap: 6px;
+    margin: 10px 0 6px;
+  }
+
+  .btn {
+    padding: 8px 12px;
+    font-size: 0.82rem;
+  }
+
+  .modal-card {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --board-dimension: min(96vw, 390px);
+  }
+
+  .header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .brand h1 {
+    font-size: 1.3rem;
+  }
+
+  .mode-bar {
+    margin: 4px 0 10px;
+  }
+
+  .mode-tab {
+    padding: 5px 8px;
+    font-size: 0.72rem;
+  }
+
+  .status-container {
+    margin-bottom: 8px;
+  }
+
+  .board-wrapper {
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Optimize touch target */
+  .cell {
+    touch-action: manipulation;
+  }
+
+  .btn {
+    padding: 7px 10px;
+    font-size: 0.78rem;
+  }
+
+  .btn span.btn-text-full {
+    display: none;
+  }
+}
+
+/* Landscape mode on small phones */
+@media (max-height: 600px) and (orientation: landscape) {
+  :root {
+    --board-dimension: min(78vh, 460px);
+  }
+
+  body {
+    padding: 4px 0;
+  }
+
+  .header {
+    padding: 6px 14px;
+  }
+
+  .mode-bar {
+    margin: 2px 0 6px;
+  }
+
+  .status-container {
+    margin-bottom: 6px;
+  }
+
+  .controls-bar {
+    margin: 6px 0;
+  }
+}

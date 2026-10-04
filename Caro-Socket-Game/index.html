@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cờ Caro (Gomoku) - Game Online Realtime & Local</title>
+  <meta name="description" content="Game Cờ Caro (Gomoku) 15x15 hoàn chỉnh, chơi 2 người trên cùng máy, chơi với máy AI thông minh và chơi Online Real-time qua Socket/P2P trên GitHub Pages.">
+  <meta name="keywords" content="co caro, gomoku, tic tac toe, game co caro online, caro socket, web game github">
+  <meta name="author" content="Antigravity">
+  
+  <!-- CSS Styles -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <!-- PeerJS CDN for WebRTC Socket Multiplayer without external backend (ideal for GitHub Pages) -->
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="brand">
+      <h1>CỜ CARO</h1>
+      <span class="brand-subtitle">Gomoku – 5 quân liên tiếp</span>
+    </div>
+
+    <div class="header-actions">
+      <button id="soundToggleBtn" class="icon-btn" title="Bật/Tắt âm thanh" aria-label="Bật hoặc tắt âm thanh">
+        <span id="soundIcon">🔊</span>
+      </button>
+      <button id="themeToggleBtn" class="icon-btn" title="Đổi giao diện sáng/tối" aria-label="Đổi theme">
+        <span id="themeIcon">🌙</span>
+      </button>
+      <button id="historyBtn" class="icon-btn" title="Xem lịch sử nước đi" aria-label="Lịch sử nước đi">
+        <span>📜</span>
+        <span class="btn-text">Lịch sử</span>
+      </button>
+      <button id="settingsBtn" class="icon-btn" title="Cài đặt trò chơi" aria-label="Cài đặt">
+        <span>⚙️</span>
+      </button>
+      <button id="helpBtn" class="icon-btn" title="Hướng dẫn luật chơi" aria-label="Hướng dẫn">
+        <span>❓</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- GAME MODE SELECTOR -->
+  <nav class="mode-bar" aria-label="Chế độ chơi">
+    <button class="mode-tab active" data-mode="local">👥 2 Người (Máy)</button>
+    <button class="mode-tab" data-mode="ai">🤖 Đấu với AI</button>
+    <button class="mode-tab" data-mode="online">🌐 Online (Socket)</button>
+  </nav>
+
+  <!-- ONLINE ROOM BADGE (Visible in Online Mode) -->
+  <div id="socketBadge" class="socket-badge">
+    <span id="socketDot" class="status-dot disconnected"></span>
+    <span id="socketStatusText">Chưa vào phòng</span>
+    <button id="openRoomModalBtn" class="icon-btn" style="padding: 2px 8px; font-size: 0.75rem; margin-left: 6px;">Phòng Online</button>
+  </div>
+
+  <!-- PLAYER TURN & GAME STATUS -->
+  <div class="status-container">
+    <!-- Player X -->
+    <div id="playerCardX" class="player-card player-x active">
+      <div class="player-badge">X</div>
+      <div class="player-info">
+        <span class="player-name">Người chơi X</span>
+        <span id="playerRoleX" class="player-role">Người chơi 1 (Đi trước)</span>
+      </div>
+    </div>
+
+    <!-- Move Counter -->
+    <div class="game-meta">
+      <span>NƯỚC</span>
+      <span id="moveCountBadge" class="move-count-badge">0</span>
+    </div>
+
+    <!-- Player O -->
+    <div id="playerCardO" class="player-card player-o">
+      <div class="player-badge">O</div>
+      <div class="player-info">
+        <span class="player-name">Người chơi O</span>
+        <span id="playerRoleO" class="player-role">Người chơi 2</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN CARO BOARD -->
+  <main class="board-wrapper">
+    <div id="board" class="board-grid turn-x" role="grid" aria-label="Bàn cờ caro"></div>
+  </main>
+
+  <!-- ACTION CONTROLS BAR -->
+  <div class="controls-bar">
+    <button id="replayBtn" class="btn btn-primary" title="Chơi lại ván cờ">
+      <span>🔄</span>
+      <span class="btn-text-full">Chơi lại</span>
+    </button>
+    <button id="newGameBtn" class="btn" title="Bắt đầu ván mới hoàn toàn">
+      <span>➕</span>
+      <span class="btn-text-full">Chơi mới</span>
+    </button>
+    <button id="undoBtn" class="btn" title="Hoàn tác nước đi gần nhất">
+      <span>↩️</span>
+      <span class="btn-text-full">Hoàn tác</span>
+    </button>
+  </div>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- RESULT MODAL -->
+  <div id="resultModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="result-banner">
+        <div id="resultIcon" class="result-icon">🎉</div>
+        <h2 id="resultTitle" class="result-title">X đã chiến thắng!</h2>
+        <p id="resultDesc" class="result-desc">Chúc mừng bạn đã hoàn thành trận đấu xuất sắc.</p>
+      </div>
+      <div class="modal-footer" style="justify-content: center;">
+        <button id="modalReplayBtn" class="btn btn-primary" style="padding: 10px 28px;">🔄 Chơi lại ngay</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRM NEW GAME MODAL -->
+  <div id="confirmModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Xác nhận ván mới</h2>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Bạn có chắc muốn bắt đầu trận đấu mới?</p>
+        <p style="margin-top: 6px; color: var(--color-o); font-weight: 500;">Tiến trình hiện tại sẽ bị xóa.</p>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelNewGameBtn" class="btn">Hủy</button>
+        <button id="confirmNewGameBtn" class="btn btn-danger">Chơi mới</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settingsModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Cài đặt trò chơi</h2>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="boardSizeSelect">Kích thước bàn cờ</label>
+          <select id="boardSizeSelect" class="form-select">
+            <option value="11">11 × 11 (Nhanh)</option>
+            <option value="15" selected>15 × 15 (Chuẩn Gomoku)</option>
+            <option value="19">19 × 19 (Rộng)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="aiLevelSelect">Độ khó của AI (Chế độ máy)</label>
+          <select id="aiLevelSelect" class="form-select">
+            <option value="easy">Dễ (Ngẫu nhiên)</option>
+            <option value="medium" selected>Trung bình (Tấn công & Chặn)</option>
+            <option value="hard">Khó (Chiến thuật cao cấp)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <div class="toggle-switch-wrapper">
+            <span class="form-label" style="margin: 0;">Hiệu ứng âm thanh</span>
+            <label class="switch">
+              <input type="checkbox" id="soundSettingToggle" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Thống kê tỉ số</label>
+          <div id="statsSummary" style="background: var(--bg-tertiary); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 0.85rem;">
+            Đang tải...
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="resetStatsBtn" class="btn btn-danger" style="margin-right: auto; font-size: 0.8rem;">Xóa tỉ số</button>
+        <button class="btn btn-primary modal-close-btn">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HELP / RULES MODAL -->
+  <div id="helpModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Hướng dẫn chơi Cờ Caro</h2>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body" style="font-size: 0.9rem; line-height: 1.6;">
+        <p><strong>1. Luật cơ bản:</strong></p>
+        <ul style="padding-left: 20px; margin: 8px 0;">
+          <li>Người chơi <strong>X</strong> luôn được quyền đi trước.</li>
+          <li>Hai bên luân phiên đặt quân vào một ô trống trên bàn cờ <strong>15×15</strong>.</li>
+          <li>Không được đặt quân vào ô đã có người đánh.</li>
+        </ul>
+
+        <p><strong>2. Điều kiện chiến thắng:</strong></p>
+        <p>Người chơi nào tạo được chuỗi <strong>từ 5 quân liên tiếp trở lên</strong> (theo hàng ngang, dọc hoặc 2 đường chéo) sẽ giành chiến thắng.</p>
+
+        <p style="margin-top: 8px;"><strong>3. Điều kiện hòa:</strong></p>
+        <p>Nếu toàn bộ 225 ô cờ đã được đánh kín mà không bên nào tạo được 5 quân liên tiếp, ván đấu kết thúc với kết quả Hòa.</p>
+
+        <p style="margin-top: 8px;"><strong>4. Các chế độ chơi:</strong></p>
+        <ul style="padding-left: 20px; margin: 8px 0;">
+          <li><strong>2 Người:</strong> Chơi luân phiên trên cùng một thiết bị.</li>
+          <li><strong>Đấu với AI:</strong> Luyện tập với máy ở 3 cấp độ Dễ / Vừa / Khó.</li>
+          <li><strong>Online Socket:</strong> Tạo phòng, gửi mã phòng cho bạn bè để chơi trực tuyến qua mạng thời gian thực.</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary modal-close-btn">Đã hiểu</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY MODAL -->
+  <div id="historyModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>Lịch sử nước đi</h2>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="historyList" class="history-list"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary modal-close-btn">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ONLINE MULTIPLAYER & CHAT MODAL -->
+  <div id="roomModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>🌐 Chơi Online Realtime (Socket P2P)</h2>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Create Room -->
+        <div class="room-box">
+          <span class="form-label">Tạo phòng mới (Bạn là Quân X):</span>
+          <button id="createRoomBtn" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 6px;">
+            ✨ Tạo phòng & Lấy mã
+          </button>
+          <div id="createdRoomInfo" style="display: none; margin-top: 8px;">
+            <div class="room-code-display">
+              <span id="createdRoomCode">CARO-XXXX</span>
+              <button id="copyRoomCodeBtn" class="icon-btn" style="padding: 4px 8px; font-size: 0.8rem;">Sao chép</button>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
+              Gửi mã phòng này cho bạn bè để bắt đầu trận đấu!
+            </p>
+          </div>
+        </div>
+
+        <!-- Join Room -->
+        <div class="room-box">
+          <span class="form-label">Vào phòng bạn bè (Bạn là Quân O):</span>
+          <div style="display: flex; gap: 6px; margin-top: 6px;">
+            <input type="text" id="joinRoomInput" class="form-input" placeholder="Nhập mã (VD: CARO-A1B2)" style="text-transform: uppercase;">
+            <button id="joinRoomBtn" class="btn btn-primary">Vào</button>
+          </div>
+        </div>
+
+        <!-- In-game Chat Box -->
+        <div class="chat-container">
+          <div id="chatMessages" class="chat-messages">
+            <div class="chat-msg system">Hộp trò chuyện phòng đấu...</div>
+          </div>
+          <div class="chat-input-row">
+            <input type="text" id="chatInput" class="chat-input" placeholder="Nhập tin nhắn..." maxlength="120">
+            <button id="chatSendBtn" class="chat-send-btn">Gửi</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="leaveRoomBtn" class="btn btn-danger" style="margin-right: auto;">Rời phòng</button>
+        <button class="btn btn-primary modal-close-btn">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Entry Point -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
